@@ -2,15 +2,12 @@ import hashlib
 import datetime
 
 
-
 class transaction:
 
     def __init__(self, sender, receiver, amount):
         self.sender = sender
         self.receiver = receiver
         self.amount = amount
-
-
 
 
 class block:
@@ -22,15 +19,15 @@ class block:
         self.mine_data = 0
         self.hash = self.get_hash()
 
-
-
     def get_hash(self):
         sha = hashlib.sha256()
         if type(self.data) is not str:
-            data_string = ''.join('[{}{}{}] '.format(send, receive, amt) for trans.sender, trans.receiver, trans.amount in trans for trans in data)
-            sha.update(str(str(self.mine_data)+data_string+self.timestamp+self.prevhash).encode('utf-8'))
+            data_string = self.get_data_string(self.data)
+            sha.update(str(str(self.mine_data)+data_string +
+                           self.timestamp+self.prevhash).encode('utf-8'))
         else:
-            sha.update(str(str(self.mine_data)+self.data+self.timestamp+self.prevhash).encode('utf-8'))
+            sha.update(str(str(self.mine_data)+self.data +
+                           self.timestamp+self.prevhash).encode('utf-8'))
 
         return sha.hexdigest()
 
@@ -44,6 +41,18 @@ class block:
 
         print("Block mined: " + self.hash)
 
+    def get_data_string(self, data):
+        string = ''
+        if type(data) is list:
+            for trans in data:
+                s = '[{} {} {}] '.format(trans.sender, trans.receiver, trans.amount)
+                string += s
+
+        else:
+            string = '[{} {} {}] '.format(data.sender, data.receiver, data.amount)
+
+        return string
+
 
 class chain:
 
@@ -54,14 +63,15 @@ class chain:
         self.mining_reward = 8
 
     def create_genesis_block(self):
-        return block('01/01/2018', 'Genesis Block', '')
+        return block('01/01/2018', transaction('Genesis Block', 'Genesis Block', 0), '')
 
     def get_latest_block(self):
         return self.chain[len(self.chain) - 1]
 
-    def mine_pending_transctions(self, miner_adress):
-        self.pending_transactions.append(transaction(None, miner_adress, self.mining_reward))
-        new_block = block(datetime.datetime.now().strftime('%d/%m/%y %M:%H:%S'), self.pending_transactions)
+    def mine_pending_transctions(self, miner_adress, chain):
+        self.pending_transactions.append(transaction('None', miner_adress, self.mining_reward))
+        new_block = block(datetime.datetime.now().strftime(
+            '%d/%m/%y %M:%H:%S'), self.pending_transactions, chain.chain[len(chain.chain)-1].hash)
         new_block.mine_block(self.difficulty)
 
         print('Block successfully mined...')
@@ -74,15 +84,21 @@ class chain:
     def get_balance(self, adress):
         balance = 0
         for block in self.chain:
-            for transaction in block:
-                if transaction.sender == adress:
+            if type(block.data) is list:
+                for transaction in block.data:
+                    if transaction.sender == adress:
+                        balance -= transaction.amount
+                    elif transaction.receiver == adress:
+                        balance += transaction.amount
+            else:
+                if block.data.sender == adress:
                     balance -= transaction.amount
-                elif transaction.receiver == adress:
+                elif block.data.receiver == adress:
                     balance += transaction.amount
         return balance
 
     def validate(self):
-        for i in range(1,len(self.chain)-1):
+        for i in range(1, len(self.chain)-1):
             block_check = self.chain[i]
             previous_block_check = self.chain[i-1]
             if block_check.hash != block_check.get_hash():
@@ -93,14 +109,14 @@ class chain:
                 return True
 
 
-
-
-
 jCoin = chain()
 
-jCoin.add_transaction(transaction('adress1','adress2', 16))
+jCoin.add_transaction(transaction('adress1', 'adress2', 16))
 print('\n Strarting the miner...')
-jCoin.mine_pending_transctions('test-adress')
+jCoin.mine_pending_transctions('test-adress', jCoin)
 
-print('test-adress balance is '+jCoin.get_balance('test-adress'))
+print('test-adress balance is '+str(jCoin.get_balance('test-adress')))
 print('Is chain valid?' + str(jCoin.validate()))
+
+for b in jCoin.chain:
+    print(b.get_data_string(b.data))
