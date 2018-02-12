@@ -58,7 +58,7 @@ class chain:
 
     def __init__(self):
         self.chain = [self.create_genesis_block()]
-        self.difficulty = 4
+        self.difficulty = 6
         self.pending_transactions = []
         self.mining_reward = 8
 
@@ -79,7 +79,10 @@ class chain:
         self.pending_transactions = []
 
     def add_transaction(self, transaction):
-        self.pending_transactions.append(transaction)
+        if(self.get_balance(transaction.sender) >= transaction.amount):
+            self.pending_transactions.append(transaction)
+        else:
+            print('Error transaction invalid')
 
     def get_balance(self, adress):
         balance = 0
