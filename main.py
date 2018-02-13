@@ -1,6 +1,8 @@
 import hashlib
 import datetime
-
+import pickle
+import csv
+import os
 
 class transaction:
 
@@ -112,14 +114,15 @@ class chain:
                 return True
 
 
-jCoin = chain()
 
-jCoin.add_transaction(transaction('adress1', 'adress2', 16))
-print('\n Strarting the miner...')
-jCoin.mine_pending_transctions('test-adress', jCoin)
 
-print('test-adress balance is '+str(jCoin.get_balance('test-adress')))
-print('Is chain valid?' + str(jCoin.validate()))
 
-for b in jCoin.chain:
-    print(b.get_data_string(b.data))
+if os.path.exists('block_chain.pickle'):
+    print('Loading the blockchain...')
+    pickle_in = open('block_chain.pickle', 'rb')
+    jCoin = pickle.load(pickle_in)
+else:
+    print('Creating the blockchain...')
+    jCoin = chain()
+    with open('block_chain.pickle', 'wb') as f:
+        pickle.dump(jCoin, f)
